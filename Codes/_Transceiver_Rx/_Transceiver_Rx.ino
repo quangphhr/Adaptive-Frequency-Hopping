@@ -200,7 +200,8 @@ void receiveMessage(){
   if (radio.available()) {
     radio.read(&temp_message, sizeof(temp_message));
     if (temp_message != "") {
-      message = String(temp_message);
+      boolean signal_status = radio.testRPD();
+      message = String(temp_message) + "," + (signal_status? ">64dBm" : "<64dBm");
       Serial.println("receive "+message);
     }
   }
