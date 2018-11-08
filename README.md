@@ -19,3 +19,13 @@
 - Bar graph showing % of missing per channel
 - Documentation: specs of the devices, pictures of the devices, random generation algorithm, how we handshake, which channel we handshake.
 
+## Task #3
+- Display channel on receiver end
+- Show strong and weak instead of rssi
+- Every 64 channels, send 10k messages
+- Calc no of weak and strong signals
+- Check if you can vary signal strength transmission
+- WiFi overlap figure
+- Prepare slides and make bargraph
+
+
