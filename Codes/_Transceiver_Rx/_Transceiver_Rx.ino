@@ -9,7 +9,7 @@ const long MESSAGE_INTERVAL = 10;
 const int MAX_CHANNEL = 125;  
 const int BASE_CHANNEL = 0;
 const int DEFAULT_CHANNEL = 76;
-const int CHANNEL_TO_CHECK = 12;            //12,37,62
+const int CHANNEL_TO_CHECK = -1;            //12,37,62
 const String MESSAGE_HEADER = "MSH";
 const String HANDSHAKE_HEADER = "HSH";
 const String ACK = "ACK";
@@ -165,11 +165,18 @@ void hoppingChannel(){
   if (next_hopping_time < start_hopping_time) next_hopping_time = start_hopping_time;
   if (present_time > next_hopping_time) {
     next_hopping_time += HOPPING_INTERVAL;
-      
-    //-- changing channel using hash --
-    channel = (channel + hash)%(125-BASE_CHANNEL);
-    radio.setChannel(BASE_CHANNEL+channel);
-    Serial.println("Hopping to channel "+String(radio.getChannel()));
+    
+    if (CHANNEL_TO_CHECK > 124 || CHANNEL_TO_CHECK < 0) {
+      //-- changing channel using hash --
+      channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
+      radio.setChannel(BASE_CHANNEL+channel);
+      Serial.println("Hopping to channel "+String(radio.getChannel()));
+    }
+    else if (channel != CHANNEL_TO_CHECK) {
+      channel = CHANNEL_TO_CHECK;
+      radio.setChannel(BASE_CHANNEL+channel);
+      Serial.println("Hopping to channel "+String(radio.getChannel())); 
+    }
   }
 }
 
@@ -201,7 +208,7 @@ void receiveMessage(){
     radio.read(&temp_message, sizeof(temp_message));
     if (temp_message != "") {
       boolean signal_status = radio.testRPD();
-      message = String(temp_message) + "," + (signal_status? ">64dBm" : "<64dBm");
+      message = String(temp_message) + "," + (signal_status? "StrongSignal" : "WeakSignal");
       Serial.println("receive "+message);
     }
   }
