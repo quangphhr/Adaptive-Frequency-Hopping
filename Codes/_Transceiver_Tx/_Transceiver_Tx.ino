@@ -11,7 +11,7 @@ const long MESSAGE_INTERVAL = 10;
 const int MAX_CHANNEL = 125; 
 const int BASE_CHANNEL = 0;
 const int DEFAULT_CHANNEL = 76;
-const int CHANNEL_TO_CHECK = 12;            //12,37,62
+const int CHANNEL_TO_CHECK = -1;            //12,37,62
 const String MESSAGE_HEADER = "MSH";
 const String HANDSHAKE_HEADER = "HSH";
 const String ACK = "ACK";
@@ -68,7 +68,7 @@ void loop() {
       if (send_state == 1) {
         if (message_count < PACKAGE_NUM) {
           if (reply_waiting == 0) {
-            message = MESSAGE_HEADER+","+String(message_count);
+            message = MESSAGE_HEADER+",CH "+String(radio.getChannel())+","+String(message_count);
             sendMessage();
             if (sent_channel != channel) sent_channel = channel;
             reply_waiting = 1;
@@ -93,12 +93,19 @@ void loop() {
           Serial.println("Finish sending "+String(PACKAGE_NUM)+" messages");
           finish = 1;
           int i;
+          float count_send=0; float count_ack=0;
           for (i = 0; i < 125; i++){
             if (channel_state[2*i] != 0) {
               Serial.println("Number of message sent in channel "+String(i)+" : "+String(channel_state[2*i]));
               Serial.println("    Number of message sent successfully : "+String(channel_state[2*i+1]));
+              count_send += channel_state[2*i];
+              count_ack  += channel_state[2*i+1];
             }
           }
+          Serial.println("Packet sent = "+String(count_send));
+          Serial.println("Packet loss  = "+String(count_send-count_ack));
+          float loss_per = (count_send-count_ack)/count_send;
+          Serial.println("Average Packet Loss = "+String(100*loss_per));
         }
       }
       }
@@ -201,11 +208,18 @@ void hoppingChannel(){
   if (next_hopping_time < start_hopping_time) next_hopping_time = start_hopping_time;
   if (present_time > next_hopping_time) {
     next_hopping_time += HOPPING_INTERVAL;
-      
-    //-- changing channel using hash --
-    channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
-    radio.setChannel(BASE_CHANNEL+channel);
-    Serial.println("Hopping to channel "+String(radio.getChannel()));
+
+    if (CHANNEL_TO_CHECK > 124 || CHANNEL_TO_CHECK < 0) {
+      //-- changing channel using hash --
+      channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
+      radio.setChannel(BASE_CHANNEL+channel);
+      Serial.println("Hopping to channel "+String(radio.getChannel()));
+    }
+    else if (channel != CHANNEL_TO_CHECK) {
+      channel = CHANNEL_TO_CHECK;
+      radio.setChannel(BASE_CHANNEL+channel);
+      Serial.println("Hopping to channel "+String(radio.getChannel())); 
+    }
   }
 }
 
