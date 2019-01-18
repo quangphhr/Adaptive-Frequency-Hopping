@@ -28,4 +28,10 @@
 - WiFi overlap figure
 - Prepare slides and make bargraph
 
+## Task #4
+- We need to black list channels
+- Collect the info for the graph , 100 times each channel
+- New Graph design, much more informative.
+- Update the documentation upto the current Implementation.
+
 
