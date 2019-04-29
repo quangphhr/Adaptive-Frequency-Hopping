@@ -12,27 +12,29 @@ const int DEFAULT_CHANNEL = 76;
 const int CHANNEL_TO_CHECK = -1;            //12,37,62
 const String MESSAGE_HEADER = "MSH";
 const String HANDSHAKE_HEADER = "HSH";
-const String BLL_HEADER = "BLL";
 const String ACK = "ACK";
-const String BLACK = "BLACK";
-String bll="";
 const int RETRY_MAX = 4;
 const long RTO = 2000;
 const int PACKAGE_NUM = 10000;
+//long previous = 0;
 boolean connection_state = 0;
+//boolean button_state = 0;
 boolean send_state = 1;
 boolean reply_waiting = 0;
 boolean finish = 0;
 int hash = 0;
 int channel = 0;
-int message_count = 0;
-int blacklisted[MAX_CHANNEL];
+//int sent_channel;
+//int hopping_step = 0;
+//int time_slot_count = 0;
+//int message_count = 0;
+//int message_count_old=0;
 String message="";
+//int channel_state[2*MAX_CHANNEL];
 unsigned long present_time;
 unsigned long start_hopping_time;
 unsigned long next_hopping_time = 0;
 unsigned long next_exchanging_time = 0;
-//int i;
 
 void setup() {
   Serial.begin(9600);
@@ -41,9 +43,6 @@ void setup() {
   radio.openReadingPipe(1, ADDRESSES[1]);
   radio.setPALevel(RF24_PA_MIN);
   pinMode(LED_BUILTIN, OUTPUT);
-  for(int i=0;i<125;i++){
-    blacklisted[i]=200;
-  }
 }
 
 void loop() {
@@ -54,18 +53,12 @@ void loop() {
   if (connection_state == 0) {
     radio.setChannel(DEFAULT_CHANNEL);
     handShake();
-
   }
   //-- receiving messages --
   else {
-//    if(i==0){
-//    Serial.println("This is after Handshake, present time ="+String(present_time)+"start hopping  time ="+String(start_hopping_time)+"next hopping time ="+String(next_hopping_time)+"next exchanging time ="+String(next_exchanging_time));
-//    }
-//    i++;
+    //Serial.println("start hopping time "+String(start_hopping_time));
     hoppingChannel();
-    //Serial.println("channel number is "+String(channel));
     slotTiming();
-    //Serial.println("This is after Hopping,present time ="+String(present_time)+"start hopping  time ="+String(start_hopping_time)+"next hopping time ="+String(next_hopping_time)+"next exchanging time ="+String(next_exchanging_time));
 
     if (present_time >= start_hopping_time) {
       if (send_state == 0) {
@@ -73,30 +66,42 @@ void loop() {
         String header = getValue(message, ',', 0);
         if (header == MESSAGE_HEADER) {
           reply_waiting = 1;
-          message_count++;
-        }
-        else if(header == BLL_HEADER){
-          bll = getValue(message, ',', 1);
-          extractnumbers(bll,blacklisted);
-          message = BLACK;
-          sendMessage();                        
         }
       }
       else {
         if (reply_waiting == 1) {
           message = ACK;
           sendMessage();
-          //Serial.println("Acknowledgement just sent ");
           reply_waiting = 0;
         }
-        if (message_count >= PACKAGE_NUM) {
-        
-          exit(0);
-        
-      }
       }
     }
-   
+  
+    /*    
+    if (present_time < start_hopping_time + PACKAGE_NUM*MESSAGE_INTERVAL*1.2) {
+      receiveMessage();
+      if (message != "") message_count++;
+      if (message_count != message_count_old) {
+        if (message_count%10 == 0) Serial.println(String(message_count) +"  messages received");
+        message_count_old = message_count;
+      }
+
+      /*
+      if (present_time - previous_exchanging_time > MESSAGE_INTERVAL) {
+        receiveMessage();
+        if (message != 0) {
+          message_count++;
+        }
+        previous_exchanging_time = present_time;
+      }
+      
+    }
+    else {
+      if (finish == 0) {
+        Serial.println("Received "+String(message_count)+" messages; Success rate = "+String(100*message_count/PACKAGE_NUM)+"%");
+        finish = 1;
+      }
+    }*/
   }
 }
 
@@ -128,7 +133,31 @@ void handShake(){
     send_state = 1;
     Serial.println("Handshake complete, start hopping time = "+String(start_hopping_time));
   }
-  
+  /*
+  if ((present_time - previous_exchanging_time) > MESSAGE_INTERVAL) {
+    //-- need better handshake: receive then send simultaneously. leave like this for now --
+    if (reply_waiting == 0) {
+      receiveMessage();
+      if (message != "") {
+        //message.remove(0,3);
+        hash = getValue(message, ',', 1).toInt();
+        Serial.println("Seed received = "+String(hash));
+        reply_waiting =1;
+        start_hopping_time = present_time+2*RTO;
+      }
+    }
+    else if (present_time < start_hopping_time - RTO) {
+      message = ACK;
+      sendMessage();
+    }
+    else {
+      reply_waiting = 0;
+      connection_state = 1;
+      Serial.println("start hopping time "+String(start_hopping_time));
+    }
+    if (previous_exchanging_time == 0) previous_exchanging_time = present_time;
+    else previous_exchanging_time += MESSAGE_INTERVAL;
+  }*/
 }
 
 void hoppingChannel(){
@@ -136,16 +165,8 @@ void hoppingChannel(){
   if (next_hopping_time < start_hopping_time) next_hopping_time = start_hopping_time;
   if (present_time > next_hopping_time) {
     next_hopping_time += HOPPING_INTERVAL;
-    Serial.println("present time and next_hopping_time before Hopping : "+String(present_time)+","+String(next_hopping_time));
+    
     if (CHANNEL_TO_CHECK > 124 || CHANNEL_TO_CHECK < 0) {
-      for(int s=0 ; s<125;s++){
-        if(s!=200 && channel == s - hash){
-          channel = (channel + 2*hash)%(MAX_CHANNEL-BASE_CHANNEL);
-          radio.setChannel(BASE_CHANNEL+channel);
-          Serial.println("Hopping to channel "+String(radio.getChannel()));
-          break;
-          }
-        }
       //-- changing channel using hash --
       channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
       radio.setChannel(BASE_CHANNEL+channel);
@@ -158,7 +179,6 @@ void hoppingChannel(){
     }
   }
 }
-
 
 void slotTiming(){
   //-- Alternate time slot --
@@ -208,11 +228,61 @@ String getValue(String data, char separator, int index){
     }
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
-
-void extractnumbers(String strName, int blistarray[125]){
-   for (int number=0; number < strName.length(); number++){
-        if(isdigit (strName[number])){
-          blistarray[strName[number]]= strName[number];
-        }
+/*
+  radio.startListening();
+  if (radio.available()) {
+    radio.read(&buttonState, sizeof(buttonState));
+  }
+      if (buttonState == 1) {
+      if (digitalRead(LED_BUILTIN)==HIGH) digitalWrite(LED_BUILTIN, LOW);
+      else digitalWrite(LED_BUILTIN, HIGH);
     }
-}
+    delay(5);
+*/
+/*
+  radio.stopListening();
+  hash += 1;
+  if (hash % 2 == 0) digitalWrite(LED_BUILTIN, HIGH);
+  else digitalWrite(LED_BUILTIN, LOW);
+  radio.write(&hash, sizeof(hash));
+  delay(1000);
+
+      radio.startListening();
+    //Serial.println(hash);
+    unsigned long Current = millis();
+    if (Current - Previous > Interval) {
+      Previous = Current;
+      //if (digitalRead(LED_BUILTIN)==HIGH) digitalWrite(LED_BUILTIN, LOW);
+      //else digitalWrite(LED_BUILTIN, HIGH);
+      //change channel using hash
+      channel = (channel + hash)%49;
+      radio.setChannel(76+channel);
+      Serial.println(radio.getChannel());
+    }
+    //while(!radio.available());
+    if (radio.available()) radio.read(&buttonState, sizeof(buttonState));
+    //radio.read(&buttonState, sizeof(buttonState));
+    if (buttonState == 1) {
+      if (digitalRead(LED_BUILTIN)==HIGH) digitalWrite(LED_BUILTIN, LOW);
+      else digitalWrite(LED_BUILTIN, HIGH);
+    }
+    delay(5);
+  }
+*/
+/*
+    if (Init == 0) {
+    radio.startListening();
+    if (radio.available()) {
+      radio.read(&hash, sizeof(hash));
+      if (hash != 0) {
+        Init = 1;
+        digitalWrite(LED_BUILTIN, HIGH);
+      }
+    }
+    delay(5);
+
+    radio.stopListening();
+    radio.write(&Init, sizeof(Init));
+    delay(5);
+
+  */
