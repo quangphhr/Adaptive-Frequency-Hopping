@@ -27,6 +27,7 @@ boolean button_state = 0;
 boolean send_state = 0;
 boolean reply_waiting = 0;
 boolean finish = 0;
+boolean bll_status = 0;
 int hash = 5;
 int channel = 0;
 int sent_channel;
@@ -67,10 +68,15 @@ void loop() {
   
   else {
     //Serial.println("start hopping time ="+String(next_exchanging_time));
+    if(bll_status == 1){
+      blacklisting();
+      }
+    else if (bll_status == 0){
     hoppingChannel();
     slotTiming();
+    }
 
-    if (present_time >= start_hopping_time) {
+    if (present_time >= start_hopping_time && bll_status == 0) {
       if (send_state == 1) {
         if (message_count < PACKAGE_NUM) {
           if (reply_waiting == 0) {
@@ -88,10 +94,10 @@ void loop() {
               for (int i = 0; i < 125; i++){
                 if (channel_state[3*i] != 0) {
                   Serial.println("Number of message sent in channel "+String(i)+" : "+String(channel_state[3*i]));
-                  Serial.println(" Number of message sent successfully : "+String(channel_state[3*i+1]));
-                  float count_send = channel_state[3*i];
-                  float count_ack  = channel_state[3*i+1];
-                  float PER = (count_send-count_ack)/count_send;
+                  Serial.println("Number of message sent successfully : "+String(channel_state[3*i+1]));
+                  float temp_count_send = channel_state[3*i];
+                  float temp_count_ack  = channel_state[3*i+1];
+                  float PER = (temp_count_send-temp_count_ack)/temp_count_send;
                   channel_state[3*i+2] = PER;
                   if(PER > 0.1){
                     blacklisted[i]= i;
@@ -103,47 +109,11 @@ void loop() {
               }
               bll = bll + '|';
               Serial.println("the current bll is:"+bll);
-              Serial.println("the current channel is "+String(radio.getChannel()));
               if(bll!=",|"){
-                message = BLL_HEADER+bll;
-                sendMessage(); 
+                Serial.println("the current channel is "+String(radio.getChannel()));
+                bll_status = 1;
+                blacklisting();
                 }   
-              delay(200);
-              if(bll!=",|"){
-                radio.setChannel(DEFAULT_CHANNEL);
-                Serial.println("Hopped to Default channel to facilitate Blacklisiting");
-                }
-              send_bll:
-              Serial.println("the current channel is "+String(radio.getChannel()));
-              bll_waiting_time = millis();
-              if(bll!=",|"){ //&& present_time < bll_waiting_time){
-              message = BLL_HEADER+bll;
-              sendMessage();
-              delay(500);
-              char temp_message[32] = "";
-              message = "";
-              radio.startListening();
-              while(!radio.available()){
-                if(millis()- bll_waiting_time >200){
-                  Serial.println("Didin't receive BLACK, sending BLL again");
-                  goto send_bll;
-                  }               
-                }
-              if (radio.available()) {
-                radio.read(&temp_message, sizeof(temp_message));
-                if (temp_message != "") {
-                  message = String(temp_message);
-                  //Serial.println("receive "+message);
-                    }
-                if (message == BLACK) {
-                  Serial.println("Blacklist received successfully");
-                  message = "Done";
-                  sendMessage();
-                  delay(10000);
-                  }
-              //goto send_bll;
-              }
-              }
                                      
             }
           }
@@ -168,22 +138,20 @@ void loop() {
           for (i = 0; i < 125; i++){
             if (channel_state[3*i] != 0) {
               Serial.println("Number of message sent in channel "+String(i)+" : "+String(channel_state[3*i]));
-              Serial.println("    Number of message sent successfully : "+String(channel_state[3*i+1]));
+              Serial.println("Number of message sent successfully "+String(i)+" : "+String(channel_state[3*i+1]));
               count_send += channel_state[3*i];
               count_ack  += channel_state[3*i+1];
             }
           }
           Serial.println("Packet sent = "+String(count_send));
           Serial.println("Packet loss  = "+String(count_send-count_ack));
-          float loss_per = (count_send-count_ack)/count_send;
-          Serial.println("Average Packet Loss = "+String(100*loss_per));
+          float Total_loss_per = (count_send-count_ack)/count_send;
+          Serial.println("Average Packet Loss = "+String(100*Total_loss_per));
         }
       }
       }
 
     }
-
-
     
   }
 }
@@ -218,30 +186,69 @@ void handShake(){
   //-- Resend seed if RTO is reached --
   if (present_time > start_hopping_time - RTO) {
     reply_waiting = 0;
-    Serial.println("Fail to handshake, redo sequence");
+    Serial.println("Fail to do handshake, redo sequence");
     if (digitalRead(LED_BUILTIN)==HIGH) digitalWrite(LED_BUILTIN, LOW);
     else digitalWrite(LED_BUILTIN, HIGH);
   }
   
 }
 
+void blacklisting(){
+  slotTiming();
+  
+  if (send_state == 1) {
+    //-- If not sent --
+    if (reply_waiting == 0) {
+      message = BLL_HEADER+bll;
+      sendMessage();
+      next_hopping_time = present_time+2*RTO;
+      reply_waiting = 1;
+      Serial.println("present time = "+String(present_time));
+      Serial.println("next hopping time = "+String(next_hopping_time));      
+    }
+  }
+  else {
+    receiveMessage();
+      if (message == BLACK) {
+        reply_waiting = 0;
+        bll_status = 0;
+        channel = radio.getChannel();
+        //next_exchanging_time = start_hopping_time;
+        send_state = 0;
+        Serial.println("Blacklist Handshake complete");
+      }
+    //}
+  }
+  //-- Resend seed if RTO is reached --
+  if (present_time > next_hopping_time - RTO) {
+    reply_waiting = 0;
+    Serial.println("Fail to do Blacklisting handshake, redo sequence");
+    if (digitalRead(LED_BUILTIN)==HIGH) digitalWrite(LED_BUILTIN, LOW);
+    else digitalWrite(LED_BUILTIN, HIGH);
+  }
+   
+  }
+
 void hoppingChannel(){
   //radio.stopListening();
   if (next_hopping_time < start_hopping_time) next_hopping_time = start_hopping_time;
   if (present_time > next_hopping_time) {
     next_hopping_time += HOPPING_INTERVAL;
-
+    for(byte y=0 ; y < sizeof(blacklisted);y++){
+      Serial.println("At index "+String(y)+" of blacklisted, the value is "+String(blacklisted[y]));  
+     }
     if (CHANNEL_TO_CHECK > 124 || CHANNEL_TO_CHECK < 0) {
       //-- changing channel using hash --
-//      for(int s=0 ; s<125;s++){
-//        if(blacklisted[s]!=200 && channel == blacklisted[s] - hash){
-//          channel = (channel + 2*hash)%(MAX_CHANNEL-BASE_CHANNEL);
-//          radio.setChannel(BASE_CHANNEL+channel);
-//          Serial.println("Hopping to channel "+String(radio.getChannel()));
-//          break;
-//          }
-//        }
+      hopLabel:
       channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
+      for(byte s=0 ; s<125;s++){
+        if(blacklisted[s]!=200 && channel == blacklisted[s] ){
+          channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
+          //radio.setChannel(BASE_CHANNEL+channel);
+          Serial.println("Dodged channel "+ String(blacklisted[s]));
+          goto hopLabel;
+          }
+        }
       radio.setChannel(BASE_CHANNEL+channel);
       Serial.println("Hopping to channel "+String(radio.getChannel()));
     }
