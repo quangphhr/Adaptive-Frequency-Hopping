@@ -35,6 +35,7 @@ int message_count = 0;
 String message="";
 int channel_state[3*MAX_CHANNEL];
 int blacklisted[MAX_CHANNEL];
+int blladded[MAX_CHANNEL];
 unsigned long present_time;
 unsigned long start_hopping_time;
 unsigned long next_hopping_time = 0;
@@ -68,6 +69,8 @@ void loop() {
   
   else {
     //Serial.println("start hopping time ="+String(next_exchanging_time));
+    
+
     if(bll_status == 1){
       blacklisting();
       }
@@ -93,18 +96,21 @@ void loop() {
               Serial.println(String(message_count) +"  messages sent");
               for (int i = 0; i < 125; i++){
                 if (channel_state[3*i] != 0) {
-                  Serial.println("Number of message sent in channel "+String(i)+" : "+String(channel_state[3*i]));
-                  Serial.println("Number of message sent successfully : "+String(channel_state[3*i+1]));
+                //  Serial.println("Number of message sent in channel "+String(i)+" : "+String(channel_state[3*i]));
+                 // Serial.println("Number of message sent successfully : "+String(channel_state[3*i+1]));
                   float temp_count_send = channel_state[3*i];
                   float temp_count_ack  = channel_state[3*i+1];
                   float PER = (temp_count_send-temp_count_ack)/temp_count_send;
                   channel_state[3*i+2] = PER;
-                  if(PER > 0.1){
+                  if(PER > 0.5){
                     blacklisted[i]= i;
                     }
                   }
                 if(blacklisted[i] != 200){
-                  bll = bll + '|'+String(i);
+                  if(blladded[i]!=i){
+                    bll = bll + '|'+String(i);
+                    blladded[i] = i;             
+                    }  
                   }
               }
               bll = bll + '|';

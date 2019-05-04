@@ -25,6 +25,7 @@ boolean send_state = 1;
 boolean reply_waiting = 0;
 boolean finish = 0;
 boolean bll_status = 0;
+boolean blc_message = 0;
 int hash = 0;
 int channel = 0;
 int message_count = 0;
@@ -78,6 +79,7 @@ void loop() {
         }
         else if(header == BLL_HEADER){
           Serial.println("the current channel is "+String(radio.getChannel()));
+          bll = getValue(message, ',', 1);
           if(bll!=",|"){ //&& present_time < bll_waiting_time){
             bll_status = 1;
             blacklisting();
@@ -139,16 +141,18 @@ void blacklisting(){
     String header = getValue(message, ',', 0);
     if (header == BLL_HEADER) {
       bll = getValue(message, ',', 1);
-      Serial.println("bll received = "+String(hash));
+      Serial.println("bll received = "+bll);
       reply_waiting =1;
+      blc_message = 1;
       next_hopping_time = present_time+2*RTO;
       extractnumbers(bll,'|',blacklisted);
       for(int i=0;i<125;i++){
+        //Serial.println("in loop");
         if(blacklisted[i]!=200){
           Serial.println("Channel "+String(blacklisted[i])+" is now blacklisted ");
-           }
-        }
+       }
     }
+   }
   }
   else {
     if (reply_waiting == 1) {
@@ -161,6 +165,7 @@ void blacklisting(){
   if ((reply_waiting == 1) && (present_time > next_hopping_time - RTO)) {
     reply_waiting = 0;
     bll_status = 0;
+    blc_message = 0;
     channel = radio.getChannel();
     //next_exchanging_time = start_hopping_time;
     send_state = 1;
@@ -184,7 +189,7 @@ void hoppingChannel(){
       channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
       for(byte s=0 ; s<125;s++){
         if(blacklisted[s]!=200 && channel == blacklisted[s] ){
-          channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
+          channel = (channel)%(MAX_CHANNEL-BASE_CHANNEL);
           //radio.setChannel(BASE_CHANNEL+channel);
           Serial.println("Dodged channel "+ String(blacklisted[s]));
           goto hopLabel;
