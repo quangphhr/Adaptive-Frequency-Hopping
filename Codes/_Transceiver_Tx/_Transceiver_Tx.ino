@@ -234,9 +234,9 @@ void hoppingChannel(){
   if (next_hopping_time < start_hopping_time) next_hopping_time = start_hopping_time;
   if (present_time > next_hopping_time) {
     next_hopping_time += HOPPING_INTERVAL;
-    for(byte y=0 ; y < sizeof(blacklisted);y++){
-      Serial.println("At index "+String(y)+" of blacklisted, the value is "+String(blacklisted[y]));  
-     }
+   // for(byte y=0 ; y < sizeof(blacklisted);y++){
+   //   Serial.println("At index "+String(y)+" of blacklisted, the value is "+String(blacklisted[y]));  
+   //  }
     if (CHANNEL_TO_CHECK > 124 || CHANNEL_TO_CHECK < 0) {
       //-- changing channel using hash --
       hopLabel:
