@@ -80,7 +80,7 @@ void loop() {
           Serial.println("the current channel is "+String(radio.getChannel()));
           if(bll!=",|"){ //&& present_time < bll_waiting_time){
             bll_status = 1;
-
+            blacklisting();
           }                       
         }
       }
@@ -274,7 +274,7 @@ void extractnumbers(String data,char seperator, int blistarray[125]){
   //    if(sepIndex[x]!=200){
    //     Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
      //   }
-      }
+     // }
     for (int n=0; n < sizeof(sepIndex); n++){ //0,1,2 :0,3,6
       if(data[sepIndex[n]]== seperator && data[sepIndex[n+1]]== seperator){
         String b = data.substring(sepIndex[n]+1,sepIndex[n+1]);
