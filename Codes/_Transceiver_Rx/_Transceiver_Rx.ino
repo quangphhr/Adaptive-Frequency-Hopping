@@ -175,9 +175,9 @@ void hoppingChannel(){
   if (next_hopping_time < start_hopping_time) next_hopping_time = start_hopping_time;
   if (present_time > next_hopping_time) {
     next_hopping_time += HOPPING_INTERVAL;
-    for(byte y=0 ; y < sizeof(blacklisted);y++){
-      Serial.println("At index "+String(y)+" of blacklisted, the value is "+String(blacklisted[y]));
-     }
+   // for(byte y=0 ; y < sizeof(blacklisted);y++){
+    //  Serial.println("At index "+String(y)+" of blacklisted, the value is "+String(blacklisted[y]));
+  //   }
     if (CHANNEL_TO_CHECK > 124 || CHANNEL_TO_CHECK < 0) {
       //-- changing channel using hash --
       hopLabel:
@@ -253,12 +253,12 @@ String getValue(String data, char separator, int index){
 void extractnumbers(String data,char seperator, int blistarray[125]){
     int found = 0;
     int maxIndex = data.length();
-    Serial.println("The length of bll is"+String(maxIndex));
+   // Serial.println("The length of bll is"+String(maxIndex));
     int los = 0;
     los = maxIndex/2;
-    Serial.println(los);
+ //   Serial.println(los);
     int sepIndex[los];
-    Serial.println("The length of SepIndex is"+String(sizeof(sepIndex)));
+  //  Serial.println("The length of SepIndex is"+String(sizeof(sepIndex)));
     int j=0;
     for(int x=0 ; x < sizeof(sepIndex);x++){
       sepIndex[x]=200;
@@ -270,10 +270,10 @@ void extractnumbers(String data,char seperator, int blistarray[125]){
         }
       }
 
-    for(int x=0 ; x < sizeof(sepIndex);x++){
-      if(sepIndex[x]!=200){
-        Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
-        }
+  //  for(int x=0 ; x < sizeof(sepIndex);x++){
+  //    if(sepIndex[x]!=200){
+   //     Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
+     //   }
       }
     for (int n=0; n < sizeof(sepIndex); n++){ //0,1,2 :0,3,6
       if(data[sepIndex[n]]== seperator && data[sepIndex[n+1]]== seperator){
