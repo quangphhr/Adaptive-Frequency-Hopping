@@ -18,7 +18,7 @@ const String BLACK = "BLACK";
 String bll=",";
 const int RETRY_MAX = 4;
 const long RTO = 2000;
-const int PACKAGE_NUM = 1250;
+const int PACKAGE_NUM = 10000;
 int bll_waiting_time=0;
 boolean connection_state = 0;
 boolean send_state = 1;
@@ -275,11 +275,11 @@ void extractnumbers(String data,char seperator, int blistarray[125]){
         }
       }
 
-  //  for(int x=0 ; x < sizeof(sepIndex);x++){
-  //    if(sepIndex[x]!=200){
-   //     Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
-     //   }
-     // }
+    for(int x=0 ; x < sizeof(sepIndex);x++){
+      if(sepIndex[x]!=200){
+        Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
+        }
+      }
     for (int n=0; n < sizeof(sepIndex); n++){ //0,1,2 :0,3,6
       if(data[sepIndex[n]]== seperator && data[sepIndex[n+1]]== seperator){
         String b = data.substring(sepIndex[n]+1,sepIndex[n+1]);

@@ -20,7 +20,7 @@ const String BLACK = "BLACK";
 String bll=",";
 const int RETRY_MAX = 4;
 const long RTO = 2000;
-const int PACKAGE_NUM = 1250;
+const int PACKAGE_NUM = 10000;
 int bll_waiting_time=0;
 boolean connection_state = 0;
 boolean button_state = 0;
@@ -249,7 +249,7 @@ void hoppingChannel(){
       channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
       for(byte s=0 ; s<125;s++){
         if(blacklisted[s]!=200 && channel == blacklisted[s] ){
-          channel = (channel + hash)%(MAX_CHANNEL-BASE_CHANNEL);
+          channel = (channel)%(MAX_CHANNEL-BASE_CHANNEL);
           //radio.setChannel(BASE_CHANNEL+channel);
           Serial.println("Dodged channel "+ String(blacklisted[s]));
           goto hopLabel;
