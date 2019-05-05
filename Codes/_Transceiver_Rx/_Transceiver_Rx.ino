@@ -80,7 +80,7 @@ void loop() {
         else if(header == BLL_HEADER){
           Serial.println("the current channel is "+String(radio.getChannel()));
           bll = getValue(message, ',', 1);
-          if(bll!=",|"){ //&& present_time < bll_waiting_time){
+          if(bll!=","){ //&& present_time < bll_waiting_time){
             bll_status = 1;
             blacklisting();
           }                       
@@ -256,40 +256,64 @@ String getValue(String data, char separator, int index){
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 void extractnumbers(String data,char seperator, int blistarray[125]){
-    int found = 0;
-    int maxIndex = data.length();
-   // Serial.println("The length of bll is"+String(maxIndex));
-    int los = 0;
-    los = maxIndex/2;
- //   Serial.println(los);
-    int sepIndex[los];
-  //  Serial.println("The length of SepIndex is"+String(sizeof(sepIndex)));
-    int j=0;
-    for(int x=0 ; x < sizeof(sepIndex);x++){
-      sepIndex[x]=200;
-     }
-    for(int i=0; i< maxIndex ; i++){
-      if(data.charAt(i)== seperator){
-        sepIndex[j] = i;
-        j++;
-        }
+  //Serial.println("length of bll before "+ String(data.length()));
+  data = data.substring(1,data.length());
+  //Serial.println("length of bll after "+ String(data.length()));
+  int numOfSeps = 0;
+  int value; 
+  
+  for(int i=0; i < data.length();i++){
+    if(data.charAt(i) == seperator ){
+      numOfSeps ++;
       }
+    }
+  //Serial.println("Num Of Seps "+ String(numOfSeps));
 
-    for(int x=0 ; x < sizeof(sepIndex);x++){
-      if(sepIndex[x]!=200){
-        Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
-        }
-      }
-    for (int n=0; n < sizeof(sepIndex); n++){ //0,1,2 :0,3,6
-      if(data[sepIndex[n]]== seperator && data[sepIndex[n+1]]== seperator){
-        String b = data.substring(sepIndex[n]+1,sepIndex[n+1]);
-        Serial.println(b);
-        blistarray[b.toInt()]= b.toInt();
-      }
-      }
-//    for(int y=0 ; y < sizeof(blistarray);y++){
-//      if(blistarray[y]!=200){
-//        Serial.println("At index"+String(y)+"of sepIndex, the value is"+String(blistarray[y]));
+  int maxIndexes = numOfSeps+1;
+  
+  //Serial.println("Num Of Indexes possible "+ String(maxIndexes));
+
+  for(int j = 0 ; j < maxIndexes; j++){
+    value = getValue(data,seperator,j).toInt();
+    //Serial.println("Value is  "+ String(value));
+    blistarray[value] = value;   
+    }
+
+
+//    int found = 0;
+//    int maxIndex = data.length();
+//   // Serial.println("The length of bll is"+String(maxIndex));
+//    int los = 0;
+//    los = maxIndex/2;
+// //   Serial.println(los);
+//    int sepIndex[los];
+//  //  Serial.println("The length of SepIndex is"+String(sizeof(sepIndex)));
+//    int j=0;
+//    for(int x=0 ; x < sizeof(sepIndex);x++){
+//      sepIndex[x]=200;
+//     }
+//    for(int i=0; i< maxIndex ; i++){
+//      if(data.charAt(i)== seperator){
+//        sepIndex[j] = i;
+//        j++;
 //        }
 //      }
+//
+//    for(int x=0 ; x < sizeof(sepIndex);x++){
+//      if(sepIndex[x]!=200){
+//        Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
+//        }
+//      }
+//    for (int n=0; n < sizeof(sepIndex); n++){ //0,1,2 :0,3,6
+//      if(data[sepIndex[n]]== seperator && data[sepIndex[n+1]]== seperator){
+//        String b = data.substring(sepIndex[n]+1,sepIndex[n+1]);
+//        Serial.println(b);
+//        blistarray[b.toInt()]= b.toInt();
+//      }
+//      }
+////    for(int y=0 ; y < sizeof(blistarray);y++){
+////      if(blistarray[y]!=200){
+////        Serial.println("At index"+String(y)+"of sepIndex, the value is"+String(blistarray[y]));
+////        }
+////      }
 }

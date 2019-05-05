@@ -113,9 +113,9 @@ void loop() {
                     }  
                   }
               }
-              bll = bll + '|';
+              //bll = bll + '|';
               Serial.println("the current bll is:"+bll);
-              if(bll!=",|"){
+              if(bll!=","){
                 Serial.println("the current channel is "+String(radio.getChannel()));
                 bll_status = 1;
                 blacklisting();
