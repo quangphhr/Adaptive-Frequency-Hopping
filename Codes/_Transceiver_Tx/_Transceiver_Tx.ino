@@ -28,6 +28,7 @@ boolean send_state = 0;
 boolean reply_waiting = 0;
 boolean finish = 0;
 boolean bll_status = 0;
+boolean blacklisting_mode = 1;
 int hash = 5;
 int channel = 0;
 int sent_channel;
@@ -92,8 +93,9 @@ void loop() {
 
             // This is where the blacklisting happens
             if (message_count%500 == 0){
-              bll = ","; 
               Serial.println(String(message_count) +"  messages sent");
+              if(blacklisting_mode == 1){
+              bll = ","; 
               for (int i = 0; i < 125; i++){
                 if (channel_state[3*i] != 0) {
                 //  Serial.println("Number of message sent in channel "+String(i)+" : "+String(channel_state[3*i]));
@@ -120,7 +122,7 @@ void loop() {
                 bll_status = 1;
                 blacklisting();
                 }   
-                                     
+              }                      
             }
           }
         }

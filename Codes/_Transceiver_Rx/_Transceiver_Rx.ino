@@ -24,6 +24,7 @@ boolean connection_state = 0;
 boolean send_state = 1;
 boolean reply_waiting = 0;
 boolean finish = 0;
+boolean blacklisting_mode = 1;
 boolean bll_status = 0;
 boolean blc_message = 0;
 int hash = 0;
@@ -77,10 +78,10 @@ void loop() {
         if (header == MESSAGE_HEADER) {
           reply_waiting = 1;
         }
-        else if(header == BLL_HEADER){
+        else if(header == BLL_HEADER && blacklisting_mode == 1){
           Serial.println("the current channel is "+String(radio.getChannel()));
           bll = getValue(message, ',', 1);
-          if(bll!=","){ //&& present_time < bll_waiting_time){
+          if(bll!=","){ 
             bll_status = 1;
             blacklisting();
           }                       
@@ -279,41 +280,4 @@ void extractnumbers(String data,char seperator, int blistarray[125]){
     blistarray[value] = value;   
     }
 
-
-//    int found = 0;
-//    int maxIndex = data.length();
-//   // Serial.println("The length of bll is"+String(maxIndex));
-//    int los = 0;
-//    los = maxIndex/2;
-// //   Serial.println(los);
-//    int sepIndex[los];
-//  //  Serial.println("The length of SepIndex is"+String(sizeof(sepIndex)));
-//    int j=0;
-//    for(int x=0 ; x < sizeof(sepIndex);x++){
-//      sepIndex[x]=200;
-//     }
-//    for(int i=0; i< maxIndex ; i++){
-//      if(data.charAt(i)== seperator){
-//        sepIndex[j] = i;
-//        j++;
-//        }
-//      }
-//
-//    for(int x=0 ; x < sizeof(sepIndex);x++){
-//      if(sepIndex[x]!=200){
-//        Serial.println("At index"+String(x)+"of sepIndex, the value is"+String(sepIndex[x]));
-//        }
-//      }
-//    for (int n=0; n < sizeof(sepIndex); n++){ //0,1,2 :0,3,6
-//      if(data[sepIndex[n]]== seperator && data[sepIndex[n+1]]== seperator){
-//        String b = data.substring(sepIndex[n]+1,sepIndex[n+1]);
-//        Serial.println(b);
-//        blistarray[b.toInt()]= b.toInt();
-//      }
-//      }
-////    for(int y=0 ; y < sizeof(blistarray);y++){
-////      if(blistarray[y]!=200){
-////        Serial.println("At index"+String(y)+"of sepIndex, the value is"+String(blistarray[y]));
-////        }
-////      }
 }
