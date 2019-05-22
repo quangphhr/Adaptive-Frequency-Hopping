@@ -12,8 +12,8 @@ const int DEFAULT_CHANNEL = 76;
 const int MAX_CHANNEL = 70;
 const int BASE_CHANNEL = 20;
 const int CHANNEL_TO_CHECK = -1;            // Hopping channel if not [0,124]
-const boolean BLACKLIST_MODE = 1;
-const boolean DATA_ACQ_MODE = 0;            // 10.000 messages each channel. Repeat PACKAGE_TIMES times
+const boolean BLACKLIST_MODE = 0;
+const boolean DATA_ACQ_MODE = 1;            // 10.000 messages each channel. Repeat PACKAGE_TIMES times
 const String MESSAGE_HEADER = "MSH";
 const String HANDSHAKE_HEADER = "HSH";
 const String ACK_HEADER = "ACK";
@@ -164,7 +164,7 @@ void loop() {
             int i;
             for (i = BASE_CHANNEL; i < MAX_CHANNEL; i++) {
               if (channel_state[2*i] != 0) {
-                float temp_per = float(channel_state[2*i+1])/float(channel_state[2*i]);
+                float temp_per = 1-float(channel_state[2*i+1])/float(channel_state[2*i]);
                 channel_state[2*i] = 0;
                 channel_state[2*i+1] = 0;
                 data_acq_value[2*i] += temp_per;
@@ -177,11 +177,9 @@ void loop() {
             int i;
             for (i = BASE_CHANNEL; i < MAX_CHANNEL; i++) {
               //if (channel_state[2*i] != 0) {
-                Serial.println("Average success rate of channel "+String(i)+" : "+String(data_acq_value[2*i]/PACKAGE_TIMES));
+                Serial.println("Average packet loss rate of channel "+String(i)+" : "+String(data_acq_value[2*i]/PACKAGE_TIMES));
                 float temp_var = (data_acq_value[2*i+1]-(data_acq_value[2*i]*data_acq_value[2*i])/PACKAGE_TIMES)/(PACKAGE_TIMES-1);
                 Serial.println("    Data variance : "+String(temp_var));
-                //Serial.println("total success rate of channel "+String(i)+" : "+String(data_acq_value[2*i]));
-                //Serial.println("    total Data variance : "+String(data_acq_value[2*i+1]));
               //}
             }
           }
