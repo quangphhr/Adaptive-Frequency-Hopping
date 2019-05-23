@@ -63,6 +63,7 @@ void loop() {
         }
         else if (header == HANDSHAKE_HEADER){
           flag_sync_state = 0;
+          flag_reply_waiting = 0;
         }
       }
       else {
@@ -112,7 +113,7 @@ void handShake(){
   }
   else {
     if (flag_reply_waiting) {
-      message = ACK_HEADER;
+      message = ACK_HEADER+"H";
       sendMessage();
       flag_reply_waiting = 0;
     }
