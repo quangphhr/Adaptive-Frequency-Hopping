@@ -17,7 +17,7 @@
 // Define variables and constants
 char wifi_name[] = "energia";
 char wifi_password[] = "launchpad";
-int maxMSH = 1000000;
+//int maxMSH = 1000000;
 int count = 0;
 int port = 5000;
 
@@ -101,7 +101,7 @@ void loop()
     if (myClient)
     {                             // if you get a client,
         Serial.println(". Client connected to server");           // print a message out the serial port
-        while(count < maxMSH){
+        while(1){
     //      if (myClient.available()){
             String MSH = "Hallo, for the "+String(count)+"th time!";
             myClient.print(MSH);
