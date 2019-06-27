@@ -17,7 +17,7 @@
 // Define variables and constants
 char wifi_name[] = "energia";
 char wifi_password[] = "launchpad";
-#int maxMSH = 1000000;
+//int maxMSH = 1000000;
 int count = 0;
 int port = 5000;
 
