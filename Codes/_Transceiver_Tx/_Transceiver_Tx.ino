@@ -9,8 +9,8 @@ const byte ADDRESSES[][6] = {"REPLY", "MAIN0"};
 const int HOPPING_INTERVAL = 1000;
 const int MESSAGE_INTERVAL = 10;
 const int DEFAULT_CHANNEL = 76;
-const int MAX_CHANNEL = 125;
-const int BASE_CHANNEL = 0;
+const int MAX_CHANNEL = 70;
+const int BASE_CHANNEL = 20;
 const int CHANNEL_TO_CHECK = -1;            // Hopping channel if not [0,124]
 const boolean BLACKLIST_MODE = 0;
 const float BLACKLIST_TOL = 0.9;
@@ -20,14 +20,14 @@ const String HANDSHAKE_HEADER = "HSH";
 const String ACK_HEADER = "ACK";
 const int RETRY_MAX = 4;
 const int RTO = 2000;
-long PACKAGE_NUM = 3001;                   // should not be >32000 each channel
+long PACKAGE_NUM = 5001;                   // should not be >32000 each channel
 const int PACKAGE_TIMES = 1;
 boolean flag_sync_state = 0;
 boolean flag_button_state = 0;
 boolean flag_send_slot = 1;
 boolean flag_reply_waiting = 0;
 boolean flag_ending_notification = 0;
-int hash = 5;                               // MAX_CHANNEL-BASE_CHANNEL % hash = 0
+int hash = 1;                               // MAX_CHANNEL-BASE_CHANNEL % hash = 0
 int current_channel = 0;
 int sent_channel;
 long message_count = 0;
@@ -55,7 +55,7 @@ void setup() {
 
   //-- when data acc mode on
   if (DATA_ACQ_MODE) {
-    PACKAGE_NUM = 5000 * long(MAX_CHANNEL - BASE_CHANNEL) + 1;
+    PACKAGE_NUM = 100 * long(MAX_CHANNEL - BASE_CHANNEL) + 1;
     hash = 1;
   }
 
