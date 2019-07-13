@@ -9,24 +9,25 @@ const byte ADDRESSES[][6] = {"REPLY", "MAIN0"};
 const int HOPPING_INTERVAL = 1000;
 const int MESSAGE_INTERVAL = 10;
 const int DEFAULT_CHANNEL = 76;
-const int MAX_CHANNEL = 70;
-const int BASE_CHANNEL = 20;
+const int MAX_CHANNEL = 125;
+const int BASE_CHANNEL = 0;
 const int CHANNEL_TO_CHECK = -1;            // Hopping channel if not [0,124]
 const boolean BLACKLIST_MODE = 1;
-const boolean DATA_ACQ_MODE = 0;            // 10.000 messages each channel. Repeat PACKAGE_TIMES times
+const float BLACKLIST_TOL = 0.5;
+const boolean DATA_ACQ_MODE = 1;            // 10.000 messages each channel. Repeat PACKAGE_TIMES times
 const String MESSAGE_HEADER = "MSH";
 const String HANDSHAKE_HEADER = "HSH";
 const String ACK_HEADER = "ACK";
 const int RETRY_MAX = 4;
 const int RTO = 2000;
-long PACKAGE_NUM = 3001;                   // should not be >32000 each channel
-const int PACKAGE_TIMES = 2;
+long PACKAGE_NUM = 10001;                   // should not be >32000 each channel
+const int PACKAGE_TIMES = 1;
 boolean flag_sync_state = 0;
 boolean flag_button_state = 0;
 boolean flag_send_slot = 1;
 boolean flag_reply_waiting = 0;
 boolean flag_ending_notification = 0;
-int hash = 2;                               // MAX_CHANNEL-BASE_CHANNEL % hash = 0
+int hash = 5;                               // MAX_CHANNEL-BASE_CHANNEL % hash = 0
 int current_channel = 0;
 int sent_channel;
 long message_count = 0;
@@ -34,6 +35,7 @@ String message = "";
 String con_message = "";
 int channel_state[2 * MAX_CHANNEL];
 boolean blacklist_state[MAX_CHANNEL];
+boolean blacklist_store[MAX_CHANNEL];
 int data_acq_times = 1;
 float data_acq_value[2 * MAX_CHANNEL];
 unsigned long present_time;
@@ -53,8 +55,8 @@ void setup() {
 
   //-- when data acc mode on
   if (DATA_ACQ_MODE) {
-    PACKAGE_NUM = 1000 * long(MAX_CHANNEL - BASE_CHANNEL) + 1;
-    hash = 1;
+    PACKAGE_NUM = 250 * long(MAX_CHANNEL - BASE_CHANNEL) + 1;
+    hash = 5;
   }
 
   //-- handshake message for start up --
@@ -90,7 +92,7 @@ void loop() {
             if (sent_channel != current_channel) sent_channel = current_channel;
             channel_state[2 * sent_channel]++;
             message_count++;
-            if (message_count % 500 == 0) {
+            if (message_count % 5000 == 0) {
               Serial.println(String(message_count) + "  messages sent");
               if (BLACKLIST_MODE) {
                 //-- update blacklist channels --
@@ -100,25 +102,31 @@ void loop() {
 
                 //-- check for bad channel --
                 boolean temp_bll = 0;
+                String bll_store;
                 int i; float count_send; float count_ack;
                 for (i = BASE_CHANNEL; i < MAX_CHANNEL; i++) {
                   count_send = channel_state[2 * i];
                   count_ack = channel_state[2 * i + 1];
-                  if (count_ack / count_send < 0.9) {
+                  bll_store += String(blacklist_store[i]);
+                  if (((1-count_ack / count_send) > BLACKLIST_TOL) && !blacklist_store[i]) {
                     blacklist_state[i] = 1;
                     Serial.println("Blacklist channel " + String(i));
                     temp_bll = 1;
                   }
                 }
+                
+                Serial.println("blacklist_store = "+bll_store);
 
                 //-- if blacklist is needed
                 if (temp_bll) {
                   con_message = HANDSHAKE_HEADER + ",1";
                   int i;
                   for (i = BASE_CHANNEL; i < MAX_CHANNEL; i++) {
-                    if (blacklist_state[i])
+                    if (blacklist_state[i] && !blacklist_store[i]) {
                       con_message = con_message + "," + String(i);
+                      blacklist_store[i] = 1;
                     //Serial.println(con_message);
+                    }
                   }
                   flag_sync_state = 0;
                 }
