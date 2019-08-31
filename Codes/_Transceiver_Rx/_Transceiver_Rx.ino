@@ -33,7 +33,7 @@ void setup() {
   radio.begin();
   radio.openWritingPipe(ADDRESSES[0]);
   radio.openReadingPipe(1, ADDRESSES[1]);
-  radio.setPALevel(RF24_PA_MIN);
+  radio.setPALevel(RF24_PA_LOW);
   
   pinMode(LED_BUILTIN, OUTPUT);
 }
@@ -91,7 +91,7 @@ void handShake(){
           break;        
         }
         case 1: {
-          //-- update blacklist channels --
+          //-- clear blacklist channels --
           //int j;
           //for (j = BASE_CHANNEL; j < MAX_CHANNEL; j++)
           //  blacklist_state[j] = 0;
@@ -102,6 +102,20 @@ void handShake(){
             //Serial.println("blacklist channel "+String(getValue(message, ',', i).toInt()));
             i++;
           }
+          break;
+        }
+        case 2: {
+          //-- clear blacklist channels --
+          int j;
+          for (j = BASE_CHANNEL; j < MAX_CHANNEL; j++)
+            blacklist_state[j] = 0;
+
+          //int i=2;
+          //while (getValue(message, ',', i) != "") {
+          //  blacklist_state[getValue(message, ',', i).toInt()] = 1;
+            //Serial.println("blacklist channel "+String(getValue(message, ',', i).toInt()));
+          //  i++;
+          //}
           break;
         }
       }

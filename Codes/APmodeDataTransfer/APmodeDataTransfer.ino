@@ -17,9 +17,16 @@
 // Define variables and constants
 char wifi_name[] = "energia";
 char wifi_password[] = "launchpad";
-//int maxMSH = 1000000;
+char st_ssid[] = "Tech_D0042985";
+char st_password[] = "GYJJYJRZ";
+
 int count = 0;
 int port = 5000;
+int channel = 6;
+unsigned long check_point = 0;
+const int CHECK_PERIOD = 300000;
+int message_interval = 10;
+//boolean reset_flag = 0;
 
 WiFiServer myServer(port);
 uint8_t oldCountClients = 0;
@@ -39,8 +46,9 @@ void setup()
     Serial.print("Starting AP... ");
     
     WiFi.beginNetwork(wifi_name, wifi_password);
-    int channel = 6;
     sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_CHANNEL, 1, (unsigned char *) &channel);
+    //sl_WlanRxStatStart();
+    
     while (WiFi.localIP() == INADDR_NONE)
     {
         // print dots while we wait for the AP config to complete
@@ -56,18 +64,19 @@ void setup()
     digitalWrite(GREEN_LED, LOW);
     IPAddress ip = WiFi.localIP();
     Serial.print("Webserver IP address = ");
-    Serial.println(ip);  
+    Serial.println(ip);
     Serial.print("Web-server port = ");
     myServer.begin();                           // start the web server on port 5000
     Serial.println(port);
     Serial.println();
+    
 }
 
 // Add loop code
 void loop()
 {
-    
     countClients = WiFi.getTotalDevices();
+    //Serial.println(" countClients = " + String(countClients));
     
     // Did a client connect/disconnect since the last time we checked?
     if (countClients != oldCountClients)
@@ -84,6 +93,8 @@ void loop()
                 Serial.print(WiFi.deviceIpAddress(k));
                 Serial.print(", MAC = ");
                 Serial.println(WiFi.deviceMacAddress(k));
+                //long rssi = WiFi.RSSI();
+                //Serial.println("Signal Strength = " + String(rssi) + " dBm");
                 Serial.println("CC3200 in AP mode only accepts one client.");
             }
         }
@@ -95,26 +106,88 @@ void loop()
         }
         oldCountClients = countClients;
     }
-    
+
     WiFiClient myClient = myServer.available();
+    Serial.println(myClient.status());
+    Serial.println(WiFi.getSocket());
+    Serial.println();
     
-    if (myClient)
-    {                             // if you get a client,
+    if (myClient) {                             // if you get a client,
         Serial.println(". Client connected to server");           // print a message out the serial port
-        while(1){
-    //      if (myClient.available()){
-            String MSH = "Hallo, for the "+String(count)+"th time!";
+        check_point = millis();
+        Serial.println("assign checkpoint complete");
+
+        while(1) {//myClient.connected()){
+
+            String MSH = "From channel "+String(channel)+ " to you with "+String(count)+ " love!";
             myClient.print(MSH);
             Serial.println(" Sent: "+ MSH +" to the client");
             count ++;
-            delay(5);
-    //        }         
+            delay(message_interval);
+
+            if ((check_point + CHECK_PERIOD) <= millis()) {
+                check_point = millis();
+                Serial.println("assign checkpoint complete");
+                channel = (channel + 5)%15;
+                Serial.println(channel);
+                //myClient.flush();
+                //WiFi.disconnect();
+                Serial.println("Check point 0");
+                sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_CHANNEL, 1, (unsigned char *) &channel);
+                Serial.println("assign channel complete");
+
+                Serial.println("Check point 1");
+                myClient.flush();
+                if (myClient) myClient.stop();
+                delay(2000);
+
+                Serial.println("Check point 2");
+                sl_WlanDisconnect();
+                delay(2000);
+                
+                Serial.println("Check point 3");
+                sl_WlanProfileDel(0xff);
+                sl_Stop(0);
+                
+                Serial.println("Check point 4");
+                sl_Start(NULL, NULL, NULL);
+                
+                Serial.println("RESET complete");
+                delay(1000);
+                myServer.begin();
+                delay(1000);
+                break;
+            }
           }
-    // close the connection:
-        myClient.stop();
+        // close the connection:
+        //myClient.stop();
         Serial.println(" Client disconnected from server ");
         Serial.println();
         digitalWrite(GREEN_LED, LOW);             
     }
-   
+    //Serial.println(" Loop checking ");
+    //myClient.stop();
+    //myServer.begin();
+    //delay(500);
+ 
+    if (WiFi.getSocket() == 255) {
+        Serial.println(WiFi.getSocket());
+
+        WiFi._initialized = false;
+        WiFi._connecting = false;
+        WiFi.begin(st_ssid, st_password);
+        //while(WiFi.status() != WL_CONNECTED) {
+        //  Serial.println("~");
+        //  delay(300);
+        //}
+        delay(1000);
+
+        WiFi.beginNetwork(wifi_name, wifi_password);
+        while(WiFi.localIP() == INADDR_NONE) {
+          Serial.println(".");
+          delay(300);
+        }
+        myServer.begin();
+        delay(1000);
+    }
 }
