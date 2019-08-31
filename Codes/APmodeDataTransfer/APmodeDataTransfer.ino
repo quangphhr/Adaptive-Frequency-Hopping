@@ -17,17 +17,18 @@
 // Define variables and constants
 char wifi_name[] = "energia";
 char wifi_password[] = "launchpad";
-//int maxMSH = 1000000;
+char st_ssid[] = "Tech_D0042985";
+char st_password[] = "GYJJYJRZ";
+
 int count = 0;
 int port = 5000;
 int channel = 6;
 unsigned long check_point = 0;
-const int CHECK_PERIOD = 180000;
+const int CHECK_PERIOD = 300000;
 int message_interval = 10;
 //boolean reset_flag = 0;
 
 WiFiServer myServer(port);
-//WiFiUDP myServer;
 uint8_t oldCountClients = 0;
 uint8_t countClients = 0;
 
@@ -107,9 +108,9 @@ void loop()
     }
 
     WiFiClient myClient = myServer.available();
-    //Serial.println(myClient.status());
-    //Serial.println(WiFi.getSocket());
-    //Serial.println();
+    Serial.println(myClient.status());
+    Serial.println(WiFi.getSocket());
+    Serial.println();
     
     if (myClient) {                             // if you get a client,
         Serial.println(". Client connected to server");           // print a message out the serial port
@@ -118,7 +119,6 @@ void loop()
 
         while(1) {//myClient.connected()){
 
-            //String MSH = "Hallo, for the "+String(count)+"th time!";
             String MSH = "From channel "+String(channel)+ " to you with "+String(count)+ " love!";
             myClient.print(MSH);
             Serial.println(" Sent: "+ MSH +" to the client");
@@ -130,90 +130,32 @@ void loop()
                 Serial.println("assign checkpoint complete");
                 channel = (channel + 5)%15;
                 Serial.println(channel);
+                //myClient.flush();
+                //WiFi.disconnect();
+                Serial.println("Check point 0");
                 sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_CHANNEL, 1, (unsigned char *) &channel);
-                //sl_WlanSet(SL_WLAN_CFG_AP_ID, WLAN_AP_OPT_CHANNEL, 1, (_u8 *) &channel);
                 Serial.println("assign channel complete");
-                //delay(500);
+
                 Serial.println("Check point 1");
                 myClient.flush();
-                //if (myClient) 
-                myClient.stop();
-                //sl_Close();
+                if (myClient) myClient.stop();
                 delay(2000);
-                //WiFi._initialized = false;
-                //WiFi.beginNetwork(wifi_name, wifi_password);
-                //WiFi.begin();
-                
-                //delay(2000);
-                //WiFi.disconnect();
-                //sl_WlanDisconnect();
-                //sl_WlanSetMode(ROLE_STA);
-                //WiFi.begin((char *)wifi_name, (char *)wifi_password);
-                //delay(1000);
-                //while(WiFi.status() != WL_CONNECT_FAILED) delay(10);
-                //WiFi.disconnect();
-                //WiFi.beginNetwork(wifi_name, wifi_password);
-                //while(WiFi.localIP() == INADDR_NONE) delay(10);
-                
-                //WiFi.begin();
-                //WiFi._initialized = false;
-                //WiFi._connecting = false;
-                //UDMAInit();
-                //sl_Start(NULL, NULL, NULL);
-                //sl_WlanDisconnect();
-                //sl_NetAppMDNSUnRegisterService(0, 0);
-                //sl_WlanProfileDel(0xFF);
-                //WiFi._initialized = true;
-                //sl_WlanRxStatStart();
-                
-                //while (WiFi.status() != WL_IDLE_STATUS) delay(10);
-                //delay(7000);
+
                 Serial.println("Check point 2");
                 sl_WlanDisconnect();
                 delay(2000);
+                
                 Serial.println("Check point 3");
                 sl_WlanProfileDel(0xff);
                 sl_Stop(0);
                 
-                //delay(10000);
-                //while (WiFi.status() != WL_IDLE_STATUS) {
-                //  Serial.println(String(WiFi.status()));
-                //  delay(100);
-                //}
-                //sl_Start(NULL,NULL,NULL);
-                //sl_Start(NULL, NULL, NULL);
-                //sl_WlanDisconnect();
-                //sl_NetAppMDNSUnRegisterService(0, 0);
-                //sl_WlanRxStatStart();
-                //sl_WlanSetMode(ROLE_STA);
-                //sl_Stop(30);
-                //sl_Start(NULL, NULL, NULL);
-                
-                //sl_WlanDisconnect();
-                //sl_NetAppMDNSUnRegisterService(0, 0);
-                //sl_WlanRxStatStart();
-                //sl_WlanSetMode(ROLE_AP);
-                //sl_Stop(NULL);
-                //Serial.println("Check point 2");
-                //WiFi.disconnect();
-                //Serial.println("Check point 3");
-                //WiFi.beginNetwork(wifi_name, wifi_password);
-                //sl_Stop(0);
-                //WiFi._connectedDeviceCount = 0;
-                //WiFi._latestConnect = 0;
-                //for (int i = 0; i < WiFi.MAX_AP_DEVICE_REGISTRY; i++) {
-                //  WiFi._connectedDevices[i].in_use = false;
-                //  memset((uint8_t *)WiFi._connectedDevices[i].ipAddress, 0, 4);
-                //  memset((uint8_t *)WiFi._connectedDevices[i].mac, 0, 6);
-                //}
                 Serial.println("Check point 4");
                 sl_Start(NULL, NULL, NULL);
-
                 
                 Serial.println("RESET complete");
-                delay(5000);
+                delay(1000);
                 myServer.begin();
-                //delay(5000);
+                delay(1000);
                 break;
             }
           }
@@ -229,22 +171,23 @@ void loop()
     //delay(500);
  
     if (WiFi.getSocket() == 255) {
-      Serial.println(WiFi.getSocket());
-      //sl_Stop(0);
-      //sl_Start(NULL, NULL, NULL);
-      //delay(5000);
-                //WiFi.disconnect();
-                //sl_WlanDisconnect();
-                //sl_WlanSetMode(ROLE_STA);
-                //WiFi.begin((char *)wifi_name, (char *)wifi_password);
-                //delay(1000);
-                //while(WiFi.status() != WL_CONNECT_FAILED) delay(10);
-                WiFi.disconnect();
-                WiFi.beginNetwork(wifi_name, wifi_password);
-                delay(10000);
-                WiFi.begin();
+        Serial.println(WiFi.getSocket());
 
-      myServer.begin();
+        WiFi._initialized = false;
+        WiFi._connecting = false;
+        WiFi.begin(st_ssid, st_password);
+        //while(WiFi.status() != WL_CONNECTED) {
+        //  Serial.println("~");
+        //  delay(300);
+        //}
+        delay(1000);
+
+        WiFi.beginNetwork(wifi_name, wifi_password);
+        while(WiFi.localIP() == INADDR_NONE) {
+          Serial.println(".");
+          delay(300);
+        }
+        myServer.begin();
+        delay(1000);
     }
-
 }
